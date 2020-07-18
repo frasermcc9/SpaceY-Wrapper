@@ -10,7 +10,10 @@ declare class Client extends EventEmitter {
     static create(clientId: string): Promise<Client>;
     on<K extends keyof ServerEvents>(event: K, listener: (...args: ServerEvents[K]) => void): this;
     emit<K extends keyof ClientPlayerEvents>(event: K, ...args: ClientPlayerEvents[K]): boolean;
-    action<K extends keyof ClientPlayerEvents>(event: K, ...args: ClientPlayerEvents[K]): Promise<{
+    action<K extends keyof ClientPlayerEvents>(
+        event: K,
+        ...args: ClientPlayerEvents[K]
+    ): Promise<{
         player?: Player;
         msg?: string;
     }>;

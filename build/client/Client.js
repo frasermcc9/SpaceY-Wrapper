@@ -1,7 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __importDefault =
+    (this && this.__importDefault) ||
+    function (mod) {
+        return mod && mod.__esModule ? mod : { default: mod };
+    };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createClient = void 0;
 const socket_io_client_1 = __importDefault(require("socket.io-client"));
@@ -33,8 +35,7 @@ class Client extends events_1.EventEmitter {
             this.socket.once("res", (result, msg, player) => {
                 if (result.valueOf()) {
                     resolve({ player: player, msg: msg.valueOf() });
-                }
-                else {
+                } else {
                     reject("ERROR: " + msg);
                 }
             });
@@ -43,7 +44,7 @@ class Client extends events_1.EventEmitter {
         });
     }
     static async getPlayer(clientId) {
-        const base = (await this.requestPlayer(clientId));
+        const base = await this.requestPlayer(clientId);
         base.inventory.attachments = new Map(Object.entries(base.inventory.attachments));
         base.inventory.materials = new Map(Object.entries(base.inventory.materials));
         base.inventory.reputation = new Map(Object.entries(base.inventory.reputation));
