@@ -1,0 +1,4 @@
+/src
+.test.ts
+/.vscode
+/node_modules
