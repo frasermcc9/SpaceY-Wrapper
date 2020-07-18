@@ -1,20 +1,25 @@
 {
-  "name": "spacey-client",
-  "version": "1.0.0",
-  "description": "",
-  "main": "build/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "json-stringify-safe": "^5.0.1",
-    "socket.io-client": "^2.3.0"
-  },
-  "devDependencies": {
-    "@types/json-stringify-safe": "^5.0.0",
-    "@types/node": "^14.0.23",
-    "@types/socket.io-client": "^1.4.33"
-  }
+	"name": "spacey-client",
+	"version": "1.0.0",
+	"description": "",
+	"main": "build/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/frasermcc9/SpaceY-Wrapper"
+	},
+	"bugs": "https://github.com/frasermcc9/SpaceY-Wrapper/issues",
+	"dependencies": {
+		"json-stringify-safe": "^5.0.1",
+		"socket.io-client": "^2.3.0"
+	},
+	"devDependencies": {
+		"@types/json-stringify-safe": "^5.0.0",
+		"@types/node": "^14.0.23",
+		"@types/socket.io-client": "^1.4.33"
+	}
 }
