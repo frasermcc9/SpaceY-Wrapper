@@ -1,27 +1,22 @@
 import client from "socket.io-client";
 import { EventEmitter } from "events";
-import { Id, Location, Msg, SkinName, Uri, Result } from "../structures/Primitives";
+import { Id, LocationName, Msg, SkinName, Uri, Result, AsteroidName, StoreName, ItemName, Quantity } from "../structures/Primitives";
 import { Setup } from "../settings/Setup";
 import { get as httpGet } from "http";
-import { Player, PreProcessPlayer } from "../structures/Player";
+import { PlayerData, PreProcessPlayer, Player, IPlayer } from "../structures/Player";
 import stringify from "json-stringify-safe";
 
 class Client extends EventEmitter {
     private socket!: SocketIOClient.Socket;
 
     private clientId: string;
-    private player: Player;
+    private player: IPlayer;
 
-    constructor(clientId: string, player: Player) {
+    constructor(clientId: string, player: PlayerData) {
         super();
         this.socket = client.connect(Setup.socketUrl + Setup.socketPort);
         this.clientId = clientId;
-        this.player = player;
-    }
-
-    public static async create(clientId: string) {
-        const player = await this.getPlayer(clientId);
-        return new Client(clientId, player);
+        this.player = new Player(player);
     }
 
     public on<K extends keyof ServerEvents>(event: K, listener: (...args: ServerEvents[K]) => void): this {
@@ -37,18 +32,18 @@ class Client extends EventEmitter {
     public action<K extends keyof ClientPlayerEvents>(
         event: K,
         ...args: ClientPlayerEvents[K]
-    ): Promise<{ player?: Player; msg?: string }> {
+    ): Promise<{ player?: PlayerData; msg?: string; success: boolean }> {
         return new Promise((resolve, reject) => {
-            this.socket.once("res", (result: Result, msg: Msg, player: Player) => {
-                if (result.valueOf()) {
-                    resolve({ player: player, msg: msg.valueOf() });
-                } else {
-                    reject("ERROR: " + msg);
-                }
+            this.socket.once("res", (result: Result, msg: Msg, player: PlayerData) => {
+                resolve({ player: player, msg: msg.valueOf(), success: result.valueOf() });
             });
             const argsIn = [stringify(this.player), ...args];
             this.socket.emit(event, argsIn);
         });
+    }
+
+    public get Player(): IPlayer {
+        return this.player;
     }
 
     public static async getPlayer(clientId: string) {
@@ -57,7 +52,7 @@ class Client extends EventEmitter {
         base.inventory.materials = new Map(Object.entries(base.inventory.materials));
         base.inventory.reputation = new Map(Object.entries(base.inventory.reputation));
         base.inventory.ships = new Map(Object.entries(base.inventory.ships));
-        return base as Player;
+        return base as PlayerData;
     }
 
     private static async requestPlayer(id: string) {
@@ -77,17 +72,24 @@ class Client extends EventEmitter {
     }
 }
 
-export async function createClient(clientId: string) {
+export async function init(clientId: string) {
     return new Client(clientId, await Client.getPlayer(clientId));
 }
 
 interface ClientPlayerEvents {
-    warp: [Location];
+    warp: [LocationName];
+
     createSkin: [SkinName, Uri];
     equipSkin: [SkinName];
     removeSkin: [];
+
+    mine: [AsteroidName];
+
+    buy: [StoreName, ItemName, Quantity];
+    sell: [StoreName, ItemName, Quantity];
+    forceSell: [StoreName, ItemName, Quantity];
 }
 
 interface ServerEvents {
-    res: [Result, Msg, Player];
+    res: [Result, Msg, PlayerData];
 }
