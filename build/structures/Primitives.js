@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Result = exports.Msg = exports.Uri = exports.SkinName = exports.Location = exports.Id = void 0;
+exports.Result = exports.Msg = exports.Quantity = exports.ItemName = exports.StoreName = exports.AsteroidName = exports.Uri = exports.SkinName = exports.LocationName = exports.Id = void 0;
 class Id extends String {
     constructor(id) {
         super(id);
     }
 }
 exports.Id = Id;
-class Location extends String {
+class LocationName extends String {
     constructor(location) {
         super(location);
     }
 }
-exports.Location = Location;
+exports.LocationName = LocationName;
 class SkinName extends String {
     constructor(skinName) {
         super(skinName);
@@ -25,6 +25,30 @@ class Uri extends String {
     }
 }
 exports.Uri = Uri;
+class AsteroidName extends String {
+    constructor(name) {
+        super(name);
+    }
+}
+exports.AsteroidName = AsteroidName;
+class StoreName extends String {
+    constructor(name) {
+        super(name);
+    }
+}
+exports.StoreName = StoreName;
+class ItemName extends String {
+    constructor(name) {
+        super(name);
+    }
+}
+exports.ItemName = ItemName;
+class Quantity extends Number {
+    constructor(quantity) {
+        super(quantity);
+    }
+}
+exports.Quantity = Quantity;
 class Msg extends String {
     constructor(msg) {
         super(msg);

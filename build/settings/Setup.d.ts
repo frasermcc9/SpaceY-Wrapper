@@ -1,4 +1,4 @@
-export declare class Setup {
+export declare abstract class Setup {
     static socketPort: number;
     static socketUrl: string;
     static restPort: number;

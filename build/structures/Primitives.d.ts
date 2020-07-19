@@ -1,7 +1,7 @@
 export declare class Id extends String {
     constructor(id: string);
 }
-export declare class Location extends String {
+export declare class LocationName extends String {
     constructor(location: string);
 }
 export declare class SkinName extends String {
@@ -9,6 +9,18 @@ export declare class SkinName extends String {
 }
 export declare class Uri extends String {
     constructor(uri: string);
+}
+export declare class AsteroidName extends String {
+    constructor(name: string);
+}
+export declare class StoreName extends String {
+    constructor(name: string);
+}
+export declare class ItemName extends String {
+    constructor(name: string);
+}
+export declare class Quantity extends Number {
+    constructor(quantity: string);
 }
 export declare class Msg extends String {
     constructor(msg: string);

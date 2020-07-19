@@ -1,2 +1,2 @@
-export { createClient } from "./client/Client";
+export { init } from "./client/Client";
 export { Setup } from "./settings/Setup";
