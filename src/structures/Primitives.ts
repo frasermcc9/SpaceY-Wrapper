@@ -4,7 +4,7 @@ export class Id extends String {
     }
 }
 
-export class Location extends String {
+export class LocationName extends String {
     constructor(location: string) {
         super(location);
     }
@@ -19,6 +19,28 @@ export class SkinName extends String {
 export class Uri extends String {
     constructor(uri: string) {
         super(uri);
+    }
+}
+
+export class AsteroidName extends String {
+    constructor(name: string) {
+        super(name);
+    }
+}
+
+export class StoreName extends String {
+    constructor(name: string) {
+        super(name);
+    }
+}
+export class ItemName extends String {
+    constructor(name: string) {
+        super(name);
+    }
+}
+export class Quantity extends Number {
+    constructor(quantity: string) {
+        super(quantity);
     }
 }
 

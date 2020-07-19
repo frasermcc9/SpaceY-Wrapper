@@ -1,4 +1,4 @@
-export class Setup {
+export abstract class Setup {
     public static socketPort: number = 8000;
     public static socketUrl: string = "http://localhost:";
 
