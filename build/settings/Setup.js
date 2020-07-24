@@ -20,3 +20,4 @@ Setup.socketPort = 8000;
 Setup.socketUrl = "http://localhost:";
 Setup.restPort = 3000;
 Setup.restUrl = "http://localhost:";
+//# sourceMappingURL=Setup.js.map

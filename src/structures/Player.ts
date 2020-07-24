@@ -1,14 +1,17 @@
-import { httpRequest } from "../functions/httpRequest";
-import { MapNode } from "./MapNode";
+import { get as httpGet } from "http";
+import { httpRequest, BaseRequest } from "../functions/httpRequest";
 import { retrieveItem } from "../functions/ItemRetriever";
-import { Server } from "http";
-import { Ship, Faction, Attachment } from "./GameAsset";
+import { Setup } from "../settings/Setup";
+import { Attachment, Faction, Ship } from "./GameAsset";
+import { MapNode, LocationAsteroids } from "./MapNode";
+import { AttachmentType } from "./Constants";
 
-export class Player implements IPlayer {
+export class Player implements ClientPlayer {
     //#region Fields
     inventory!: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Map<string, number>;
         ships: Map<string, number>;
         attachments: Map<string, number>;
@@ -25,15 +28,26 @@ export class Player implements IPlayer {
     dateOfEntry!: Date;
     lastUpdated!: Date;
     //#endregion
-    constructor(data: PlayerData) {
+
+    static async create(uId: string): Promise<ClientPlayer> {
+        return new Player(await this.getPlayer(uId));
+    }
+
+    private constructor(data: PlayerData) {
         Object.assign(this, data);
     }
+
     async currentLocation(): Promise<MapNode> {
-        return (await httpRequest("location/" + this.location)) as MapNode;
+        const req = (await httpRequest("location/" + this.location)) as BaseRequest<MapNode>;
+        if (req.status == "200") {
+            return req.data!;
+        } else {
+            return Promise.reject("Current location could not be retrieved.");
+        }
     }
 
     async adjacentLocations(): Promise<MapNode[]> {
-        return (await httpRequest("user/" + this.uId + "/adjacent")) as MapNode[];
+        return (await this.currentLocation()).adjacent;
     }
     async profile(): Promise<PlayerProfile> {
         return {
@@ -47,15 +61,62 @@ export class Player implements IPlayer {
             location: this.location,
             exp: this.exp,
             expToNext: this.ExpToNextLevel,
+            cargoString: this.inventory.cargoString,
         };
     }
 
-    public get Level(): number {
+    get Level(): number {
         return Player.inverseExpFunction(this.exp);
     }
-    public get ExpToNextLevel(): number {
+    get ExpToNextLevel(): number {
         return Math.ceil(Player.expFunction(this.Level + 1) - this.exp);
     }
+
+    parseForServer(): ServerPlayer {
+        return {
+            blueprints: this.blueprints,
+            exp: this.exp,
+            inventory: this.inventory,
+            location: this.location,
+            ship: { name: this.ship.name, equipped: this.ship.equipped?.map((a) => a.name) ?? [] },
+            skills: this.skills,
+            uId: this.uId,
+            skin: this.skin,
+            skins: this.skins,
+        };
+    }
+
+    async regionAsteroids(): Promise<LocationAsteroids> {
+        return (await httpRequest(
+            "location/" + this.location + "/" + this.uId + "/regionasteroids"
+        )) as LocationAsteroids;
+    }
+
+    availableSlots() {
+        const returnValue = new Map<AttachmentType, number>();
+        for (const key in this.ship.availableSlots) {
+            const ordinal = Number(key) as AttachmentType;
+            returnValue.set(ordinal, this.ship.availableSlots[ordinal]);
+        }
+        return returnValue;
+    }
+
+    hasBlueprint(item: string): boolean {
+        return this.blueprints.includes(item);
+    }
+
+    /**Gets the amount of the given item */
+    amountInInventory(item: string): number {
+        return (
+            this.inventory.attachments.get(item) ||
+            this.inventory.materials.get(item) ||
+            this.inventory.reputation.get(item) ||
+            this.inventory.ships.get(item) ||
+            0
+        );
+    }
+
+    //#region private helpers
 
     /**
      * Returns cumulative xp required to reach a level
@@ -79,7 +140,7 @@ export class Player implements IPlayer {
     }
 
     private async playerImage(): Promise<string> {
-        if (this.skin != undefined) {
+        if (this.skin.skinUri != "") {
             return this.skin.skinUri;
         } else {
             const ship = await retrieveItem<Ship>(this.ship.name);
@@ -104,18 +165,50 @@ export class Player implements IPlayer {
             throw new TypeError(`Could not GET faction '${bestFaction}'.`);
         }
     }
+
+    //#endregion
+
+    //statics
+    public static async getPlayer(clientId: string) {
+        const base = (await this.requestPlayer(clientId)) as PreProcessPlayer;
+        base.inventory.attachments = new Map(Object.entries(base.inventory.attachments));
+        base.inventory.materials = new Map(Object.entries(base.inventory.materials));
+        base.inventory.reputation = new Map(Object.entries(base.inventory.reputation));
+        base.inventory.ships = new Map(Object.entries(base.inventory.ships));
+        return base as PlayerData;
+    }
+
+    private static async requestPlayer(id: string) {
+        return new Promise((resolve) => {
+            let data = "";
+            httpGet(Setup.restUrl + Setup.restPort + "/user/" + id, (res) => {
+                res.on("data", (chunk) => (data += chunk));
+                res.on("end", () => {
+                    resolve(JSON.parse(data));
+                });
+            });
+        });
+    }
 }
 
-export interface IPlayer extends PlayerData {
+export interface ClientPlayer extends PlayerData {
+    Level: number;
+    ExpToNextLevel: number;
     adjacentLocations(): Promise<MapNode[]>;
     currentLocation(): Promise<MapNode>;
     profile(): Promise<PlayerProfile>;
+    regionAsteroids(): Promise<LocationAsteroids>;
+    parseForServer(): ServerPlayer;
+    availableSlots(): Map<AttachmentType, number>;
+    hasBlueprint(item: string): boolean;
+    amountInInventory(item: string): number;
 }
 
 export interface PlayerData extends PlayerBase {
     inventory: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Map<string, number>;
         ships: Map<string, number>;
         attachments: Map<string, number>;
@@ -126,6 +219,7 @@ export interface PreProcessPlayer extends PlayerBase {
     inventory: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Object;
         ships: Object;
         attachments: Object;
@@ -144,6 +238,29 @@ interface PlayerBase {
     dateOfEntry?: Date;
     lastUpdated?: Date;
 }
+
+/**
+ * Interface for raw player data acceptable to sending through the websocket
+ */
+export interface ServerPlayer {
+    uId: string;
+    ship: { name: string; equipped: string[] };
+    skin?: { skinUri: string; skinName: string };
+    skins?: { skinUri: string; skinName: string }[];
+    inventory: {
+        credits: number;
+        tokens: number;
+        materials: Map<string, number>;
+        ships: Map<string, number>;
+        attachments: Map<string, number>;
+        reputation: Map<string, number>;
+    };
+    location: string;
+    blueprints: string[];
+    exp: number;
+    skills: [number, number, number];
+}
+
 interface PlayerShip {
     name: string;
     description: string;
@@ -164,7 +281,7 @@ interface PlayerShip {
         energy?: number[] | null;
     };
     weaponCapacities: ShipSlots;
-    equippedSlots: ShipSlots;
+    availableSlots: ShipSlots;
     maxTech: number;
     strength: number;
     baseShip: Ship;
@@ -180,6 +297,7 @@ interface PlayerProfile {
     location: string;
     exp: number;
     expToNext: number;
+    cargoString: string;
 }
 interface ShipSlots {
     0: number;

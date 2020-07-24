@@ -1,9 +1,11 @@
-import { MapNode } from "./MapNode";
-import { Ship, Faction, Attachment } from "./GameAsset";
-export declare class Player implements IPlayer {
+import { Attachment, Faction, Ship } from "./GameAsset";
+import { MapNode, LocationAsteroids } from "./MapNode";
+import { AttachmentType } from "./Constants";
+export declare class Player implements ClientPlayer {
     inventory: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Map<string, number>;
         ships: Map<string, number>;
         attachments: Map<string, number>;
@@ -25,12 +27,19 @@ export declare class Player implements IPlayer {
     skills: [number, number, number];
     dateOfEntry: Date;
     lastUpdated: Date;
-    constructor(data: PlayerData);
+    static create(uId: string): Promise<ClientPlayer>;
+    private constructor();
     currentLocation(): Promise<MapNode>;
     adjacentLocations(): Promise<MapNode[]>;
     profile(): Promise<PlayerProfile>;
     get Level(): number;
     get ExpToNextLevel(): number;
+    parseForServer(): ServerPlayer;
+    regionAsteroids(): Promise<LocationAsteroids>;
+    availableSlots(): Map<AttachmentType, number>;
+    hasBlueprint(item: string): boolean;
+    /**Gets the amount of the given item */
+    amountInInventory(item: string): number;
     /**
      * Returns cumulative xp required to reach a level
      * @param x the level
@@ -45,16 +54,26 @@ export declare class Player implements IPlayer {
     private static inverseExpFunction;
     private playerImage;
     private bestFaction;
+    static getPlayer(clientId: string): Promise<PlayerData>;
+    private static requestPlayer;
 }
-export interface IPlayer extends PlayerData {
+export interface ClientPlayer extends PlayerData {
+    Level: number;
+    ExpToNextLevel: number;
     adjacentLocations(): Promise<MapNode[]>;
     currentLocation(): Promise<MapNode>;
     profile(): Promise<PlayerProfile>;
+    regionAsteroids(): Promise<LocationAsteroids>;
+    parseForServer(): ServerPlayer;
+    availableSlots(): Map<AttachmentType, number>;
+    hasBlueprint(item: string): boolean;
+    amountInInventory(item: string): number;
 }
 export interface PlayerData extends PlayerBase {
     inventory: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Map<string, number>;
         ships: Map<string, number>;
         attachments: Map<string, number>;
@@ -65,6 +84,7 @@ export interface PreProcessPlayer extends PlayerBase {
     inventory: {
         credits: number;
         tokens: number;
+        cargoString: string;
         materials: Object;
         ships: Object;
         attachments: Object;
@@ -89,6 +109,36 @@ interface PlayerBase {
     dateOfEntry?: Date;
     lastUpdated?: Date;
 }
+/**
+ * Interface for raw player data acceptable to sending through the websocket
+ */
+export interface ServerPlayer {
+    uId: string;
+    ship: {
+        name: string;
+        equipped: string[];
+    };
+    skin?: {
+        skinUri: string;
+        skinName: string;
+    };
+    skins?: {
+        skinUri: string;
+        skinName: string;
+    }[];
+    inventory: {
+        credits: number;
+        tokens: number;
+        materials: Map<string, number>;
+        ships: Map<string, number>;
+        attachments: Map<string, number>;
+        reputation: Map<string, number>;
+    };
+    location: string;
+    blueprints: string[];
+    exp: number;
+    skills: [number, number, number];
+}
 interface PlayerShip {
     name: string;
     description: string;
@@ -109,7 +159,7 @@ interface PlayerShip {
         energy?: number[] | null;
     };
     weaponCapacities: ShipSlots;
-    equippedSlots: ShipSlots;
+    availableSlots: ShipSlots;
     maxTech: number;
     strength: number;
     baseShip: Ship;
@@ -125,6 +175,7 @@ interface PlayerProfile {
     location: string;
     exp: number;
     expToNext: number;
+    cargoString: string;
 }
 interface ShipSlots {
     0: number;

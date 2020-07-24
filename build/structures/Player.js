@@ -1,18 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
+const http_1 = require("http");
 const httpRequest_1 = require("../functions/httpRequest");
 const ItemRetriever_1 = require("../functions/ItemRetriever");
+const Setup_1 = require("../settings/Setup");
 class Player {
-    //#endregion
     constructor(data) {
         Object.assign(this, data);
     }
+    //#endregion
+    static async create(uId) {
+        return new Player(await this.getPlayer(uId));
+    }
     async currentLocation() {
-        return (await httpRequest_1.httpRequest("location/" + this.location));
+        const req = (await httpRequest_1.httpRequest("location/" + this.location));
+        if (req.status == "200") {
+            return req.data;
+        }
+        else {
+            return Promise.reject("Current location could not be retrieved.");
+        }
     }
     async adjacentLocations() {
-        return (await httpRequest_1.httpRequest("user/" + this.uId + "/adjacent"));
+        return (await this.currentLocation()).adjacent;
     }
     async profile() {
         return {
@@ -26,6 +37,7 @@ class Player {
             location: this.location,
             exp: this.exp,
             expToNext: this.ExpToNextLevel,
+            cargoString: this.inventory.cargoString,
         };
     }
     get Level() {
@@ -34,6 +46,42 @@ class Player {
     get ExpToNextLevel() {
         return Math.ceil(Player.expFunction(this.Level + 1) - this.exp);
     }
+    parseForServer() {
+        return {
+            blueprints: this.blueprints,
+            exp: this.exp,
+            inventory: this.inventory,
+            location: this.location,
+            ship: { name: this.ship.name, equipped: this.ship.equipped?.map((a) => a.name) ?? [] },
+            skills: this.skills,
+            uId: this.uId,
+            skin: this.skin,
+            skins: this.skins,
+        };
+    }
+    async regionAsteroids() {
+        return (await httpRequest_1.httpRequest("location/" + this.location + "/" + this.uId + "/regionasteroids"));
+    }
+    availableSlots() {
+        const returnValue = new Map();
+        for (const key in this.ship.availableSlots) {
+            const ordinal = Number(key);
+            returnValue.set(ordinal, this.ship.availableSlots[ordinal]);
+        }
+        return returnValue;
+    }
+    hasBlueprint(item) {
+        return this.blueprints.includes(item);
+    }
+    /**Gets the amount of the given item */
+    amountInInventory(item) {
+        return (this.inventory.attachments.get(item) ||
+            this.inventory.materials.get(item) ||
+            this.inventory.reputation.get(item) ||
+            this.inventory.ships.get(item) ||
+            0);
+    }
+    //#region private helpers
     /**
      * Returns cumulative xp required to reach a level
      * @param x the level
@@ -55,7 +103,7 @@ class Player {
         }
     }
     async playerImage() {
-        if (this.skin != undefined) {
+        if (this.skin.skinUri != "") {
             return this.skin.skinUri;
         }
         else {
@@ -82,5 +130,27 @@ class Player {
             throw new TypeError(`Could not GET faction '${bestFaction}'.`);
         }
     }
+    //#endregion
+    //statics
+    static async getPlayer(clientId) {
+        const base = (await this.requestPlayer(clientId));
+        base.inventory.attachments = new Map(Object.entries(base.inventory.attachments));
+        base.inventory.materials = new Map(Object.entries(base.inventory.materials));
+        base.inventory.reputation = new Map(Object.entries(base.inventory.reputation));
+        base.inventory.ships = new Map(Object.entries(base.inventory.ships));
+        return base;
+    }
+    static async requestPlayer(id) {
+        return new Promise((resolve) => {
+            let data = "";
+            http_1.get(Setup_1.Setup.restUrl + Setup_1.Setup.restPort + "/user/" + id, (res) => {
+                res.on("data", (chunk) => (data += chunk));
+                res.on("end", () => {
+                    resolve(JSON.parse(data));
+                });
+            });
+        });
+    }
 }
 exports.Player = Player;
+//# sourceMappingURL=Player.js.map

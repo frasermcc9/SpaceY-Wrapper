@@ -6,3 +6,4 @@ function retrieveItem(itemName) {
     return httpRequest_1.httpRequest("item/" + itemName);
 }
 exports.retrieveItem = retrieveItem;
+//# sourceMappingURL=ItemRetriever.js.map

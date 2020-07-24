@@ -2,6 +2,8 @@ export interface BaseItem {
     name: string;
     description: string;
     techLevel: number;
+    /**base cost (not guaranteed) */
+    cost: number;
 }
 export interface Base<K extends BaseItem> {
     status: string;

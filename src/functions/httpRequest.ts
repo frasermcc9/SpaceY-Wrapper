@@ -1,7 +1,7 @@
 import { get as httpGet } from "http";
 import { Setup } from "..";
 
-export function httpRequest(path: string) {
+export function httpRequest(path: string): Promise<Object> {
     return new Promise((resolve) => {
         let data = "";
         httpGet(Setup.restUrl + Setup.restPort + "/" + path, (res) => {
@@ -11,4 +11,9 @@ export function httpRequest(path: string) {
             });
         });
     });
+}
+
+export interface BaseRequest<K> {
+    status: string;
+    data?: K;
 }

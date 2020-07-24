@@ -15,3 +15,4 @@ function httpRequest(path) {
     });
 }
 exports.httpRequest = httpRequest;
+//# sourceMappingURL=httpRequest.js.map

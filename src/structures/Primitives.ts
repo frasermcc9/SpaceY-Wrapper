@@ -1,4 +1,4 @@
-export class Id extends String {
+/* export class Id extends String {
     constructor(id: string) {
         super(id);
     }
@@ -54,3 +54,4 @@ export class Result extends Boolean {
         super(code);
     }
 }
+ */
