@@ -15,7 +15,7 @@
   "bugs": "https://github.com/frasermcc9/SpaceY-Wrapper/issues",
   "dependencies": {
     "json-stringify-safe": "^5.0.1",
-    "socket.io-client": "^2.3.0"
+    "socket.io-client": "^2.5.0"
   },
   "devDependencies": {
     "@types/json-stringify-safe": "^5.0.0",
